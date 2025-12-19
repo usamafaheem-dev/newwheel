@@ -1078,18 +1078,121 @@ function App() {
             finalWinnerIndex = targetWinnerIndex
             winnerName = names[finalWinnerIndex]
             
-            // Get ticket from mapping - prioritize winnerForThisSpin.ticketNumber
+            // CRITICAL: Always prioritize winnerForThisSpin.ticketNumber (the ticket that was selected)
+            // This is the source of truth for fixed winner selection
             if (winnerForThisSpin && winnerForThisSpin.ticketNumber) {
               winnerTicket = String(winnerForThisSpin.ticketNumber).trim()
+              
+              // CRITICAL: Verify that the name at targetWinnerIndex matches the selected ticket
+              // If name has ticket in format "Name (Ticket)", ensure it matches selected ticket
+              const nameTicketMatch = winnerName.match(/^(.+?)\s*\((\d+)\)$/)
+              if (nameTicketMatch) {
+                const nameTicket = nameTicketMatch[2]
+                const cleanName = nameTicketMatch[1].trim()
+                
+                // If name's ticket doesn't match selected ticket, find correct name by ticket
+                if (nameTicket !== winnerTicket) {
+                  console.warn('⚠️ Name ticket mismatch - finding correct name by ticket:', {
+                    nameAtIndex: winnerName,
+                    nameTicket: nameTicket,
+                    selectedTicket: winnerTicket,
+                    targetIndex: targetWinnerIndex
+                  })
+                  
+                  // Find name that matches the selected ticket using ticketToNameMap
+                  if (ticketToNameMap && ticketToNameMap[winnerTicket]) {
+                    const correctName = ticketToNameMap[winnerTicket]
+                    // Find index of correct name
+                    const correctIndex = names.findIndex(n => {
+                      // Check if name matches exactly or matches clean name
+                      return n === correctName || 
+                             n === `${cleanName} (${winnerTicket})` ||
+                             (nameToTicketMap[n] && String(nameToTicketMap[n]).trim() === winnerTicket)
+                    })
+                    
+                    if (correctIndex !== -1 && correctIndex < names.length) {
+                      finalWinnerIndex = correctIndex
+                      winnerName = names[correctIndex]
+                      console.log('✅ Found correct name by ticket:', {
+                        oldName: names[targetWinnerIndex],
+                        newName: winnerName,
+                        ticket: winnerTicket,
+                        oldIndex: targetWinnerIndex,
+                        newIndex: correctIndex
+                      })
+                    } else {
+                      // Update name to match ticket format
+                      winnerName = `${cleanName} (${winnerTicket})`
+                      console.log('✅ Updated name to match selected ticket:', {
+                        originalName: names[targetWinnerIndex],
+                        updatedName: winnerName,
+                        ticket: winnerTicket
+                      })
+                    }
+                  } else {
+                    // Update name to match ticket format
+                    winnerName = `${cleanName} (${winnerTicket})`
+                    console.log('✅ Updated name to match selected ticket (no mapping found):', {
+                      originalName: names[targetWinnerIndex],
+                      updatedName: winnerName,
+                      ticket: winnerTicket
+                    })
+                  }
+                }
+              }
+              
+              console.log('✅ Fixed winner ticket from winnerForThisSpin (SELECTED TICKET):', {
+                winnerName,
+                winnerTicket,
+                source: 'winnerForThisSpin.ticketNumber',
+                note: 'This is the ticket number that was selected by user'
+              })
             } else {
-              // Fallback to nameToTicketMap
+              // Fallback 1: Try nameToTicketMap (mapping from original data)
               winnerTicket = nameToTicketMap[winnerName]
               if (winnerTicket) {
                 winnerTicket = String(winnerTicket).trim()
+                console.log('✅ Fixed winner ticket from nameToTicketMap:', {
+                  winnerName,
+                  winnerTicket,
+                  source: 'nameToTicketMap'
+                })
+              } else {
+                // Fallback 2: Extract from name format "Name (Ticket)" ONLY if no ticket was selected
+                // This is last resort - don't use if ticket was already selected
+                const nameTicketMatch = winnerName.match(/^(.+?)\s*\((\d+)\)$/)
+                if (nameTicketMatch) {
+                  winnerTicket = nameTicketMatch[2]
+                  console.log('⚠️ Ticket extracted from name format (fallback):', {
+                    originalName: winnerName,
+                    cleanName: nameTicketMatch[1],
+                    ticket: winnerTicket,
+                    warning: 'No ticket was selected, using ticket from name format'
+                  })
+                } else {
+                  console.warn('⚠️ No ticket found for fixed winner:', {
+                    winnerName,
+                    winnerForThisSpin,
+                    nameToTicketMapHasName: winnerName in nameToTicketMap
+                  })
+                }
               }
             }
             
-            // If still no ticket, leave it undefined (don't use name as fallback)
+            // CRITICAL: Ensure winnerForThisSpin.ticketNumber is ALWAYS used if available
+            // This ensures the selected ticket number is displayed, not the one from name format
+            if (winnerForThisSpin && winnerForThisSpin.ticketNumber) {
+              const selectedTicket = String(winnerForThisSpin.ticketNumber).trim()
+              // Only override if current ticket doesn't match selected ticket
+              if (winnerTicket !== selectedTicket) {
+                console.log('🔄 Overriding ticket with selected ticket number:', {
+                  currentTicket: winnerTicket,
+                  selectedTicket: selectedTicket,
+                  reason: 'Selected ticket takes priority over name format or mapping'
+                })
+                winnerTicket = selectedTicket
+              }
+            }
             } else {
             // Random spin or fixed winner not found - use calculated winner from displayedNames
             winnerName = displayedWinnerName
@@ -1799,25 +1902,40 @@ function App() {
             })
           }
           
-          // ONLY store ticket if it exists and is different from name
-          // Don't use name as ticket fallback - this prevents removing all entries with same name
+          // CRITICAL: Always extract ticket number - prioritize from original item, then from formatted name
+          let finalTicket = null
+          
+          // First priority: Get ticket from original item
           if (ticketNumber && String(ticketNumber).trim() !== '' && String(ticketNumber).trim() !== String(name).trim()) {
-            const ticket = String(ticketNumber).trim()
-            ticketMap[name] = ticket
-            ticketNameMap[ticket] = name
-            ticketIndexMap[ticket] = idx // Fast lookup for removal
+            finalTicket = String(ticketNumber).trim()
           } else {
-            // No ticket in original item - try to extract from formatted name as fallback
+            // Second priority: Extract ticket from formatted name "Name (Ticket)"
             const ticketMatch = name.match(/^(.+?)\s*\((\d+)\)$/)
             if (ticketMatch) {
-              const extractedTicket = ticketMatch[2]
-              // Only use extracted ticket if no actual ticket number found in original item
-              if (!ticketMap[name]) {
-                ticketMap[name] = extractedTicket
-                ticketNameMap[extractedTicket] = name
-                ticketIndexMap[extractedTicket] = idx // Fast lookup for removal
-              }
+              finalTicket = ticketMatch[2]
             }
+          }
+          
+          // ALWAYS store ticket if found (even if it matches name format)
+          // This ensures ticket-based identification works correctly
+          if (finalTicket) {
+            ticketMap[name] = finalTicket
+            ticketNameMap[finalTicket] = name
+            ticketIndexMap[finalTicket] = idx // Fast lookup for removal
+            
+            console.log('🎫 Ticket mapped:', {
+              name,
+              ticket: finalTicket,
+              index: idx,
+              source: ticketNumber ? 'originalItem' : 'formattedName'
+            })
+          } else {
+            console.warn('⚠️ No ticket found for entry:', {
+              name,
+              index: idx,
+              hasTicketNumber: !!ticketNumber,
+              ticketNumberValue: ticketNumber
+            })
           }
           // Always store index mapping
           indexMap[name] = idx
@@ -3087,7 +3205,7 @@ function App() {
                               }}>
                                 {winner.name}
                               </div>
-                              {winner.ticket && winner.ticket !== winner.name && (
+                              {winner.ticket && (
                                 <div style={{
                                   color: '#aaa',
                                   fontSize: '14px'
@@ -3126,7 +3244,7 @@ function App() {
               </div>
               <div className="winner-content">
                 <div className="winner-name">{winner.name}</div>
-                {winner.ticket && winner.ticket !== winner.name && (
+                {winner.ticket && (
                   <div className="winner-ticket" style={{ 
                     marginTop: '8px', 
                     fontSize: '18px', 
