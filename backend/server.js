@@ -20,8 +20,17 @@ const PORT = process.env.PORT || 3001
 // Connect to MongoDB
 connectDB()
 
-// Middleware
-app.use(cors())
+// Middleware - CORS configuration
+app.use(cors({
+  origin: '*', // Allow all origins (you can restrict this to specific domains)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: false
+}))
+
+// Handle preflight requests
+app.options('*', cors())
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
