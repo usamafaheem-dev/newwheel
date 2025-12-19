@@ -302,8 +302,13 @@ app.post('/api/spins/set-fixed-winner/:id/', async (req, res) => {
   }
 })
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`)
-  console.log(`📦 Using MongoDB database`)
-})
+// Export for Vercel serverless functions
+export default app
+
+// Start server only if not in Vercel environment
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Backend server running on http://localhost:${PORT}`)
+    console.log(`📦 Using MongoDB database`)
+  })
+}
