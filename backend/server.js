@@ -35,47 +35,33 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads')
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-    }
-    cb(null, uploadDir)
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, uniqueSuffix + '-' + file.originalname)
-  }
-})
+// Use memory storage for Vercel compatibility (serverless functions)
+const storage = multer.memoryStorage()
 
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 })
 
-// Parse Excel file
-const parseExcelFile = (filePath) => {
+// Parse Excel file from buffer (for Vercel/serverless)
+const parseExcelFile = (buffer) => {
   try {
-    const workbook = xlsx.readFile(filePath)
+    const workbook = xlsx.read(buffer, { type: 'buffer' })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
     const data = xlsx.utils.sheet_to_json(worksheet)
     return data
   } catch (error) {
     console.error('Error parsing Excel file:', error)
-    throw new Error('Failed to parse Excel file')
+    throw new Error('Failed to parse Excel file: ' + error.message)
   }
 }
 
-// Convert image to base64
-const imageToBase64 = (filePath) => {
+// Convert image buffer to base64
+const imageToBase64 = (buffer, mimetype) => {
   try {
-    const imageBuffer = fs.readFileSync(filePath)
-    const base64 = imageBuffer.toString('base64')
-    const ext = path.extname(filePath).toLowerCase()
-    const mimeType = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
-    return `data:${mimeType};base64,${base64}`
+    const base64 = buffer.toString('base64')
+    return `data:${mimetype || 'image/png'};base64,${base64}`
   } catch (error) {
     console.error('Error converting image to base64:', error)
     return null
@@ -156,13 +142,13 @@ app.post('/api/spins/upload/', upload.fields([
     const filename = req.body.filename || excelFile.originalname.replace(/\.(xlsx|xls)$/i, '')
     const ticketNumber = req.body.ticket_number || ''
 
-    // Parse Excel file
-    const jsonContent = parseExcelFile(excelFile.path)
+    // Parse Excel file from buffer (Vercel/serverless compatible)
+    const jsonContent = parseExcelFile(excelFile.buffer)
 
-    // Convert picture to base64 if provided
+    // Convert picture buffer to base64 if provided
     let pictureBase64 = null
-    if (pictureFile) {
-      pictureBase64 = imageToBase64(pictureFile.path)
+    if (pictureFile && pictureFile.buffer) {
+      pictureBase64 = imageToBase64(pictureFile.buffer, pictureFile.mimetype)
     }
 
     // Create file in MongoDB
@@ -173,16 +159,6 @@ app.post('/api/spins/upload/', upload.fields([
       ticketNumber: ticketNumber.trim(),
       active: true
     })
-
-    // Clean up uploaded files
-    try {
-      fs.unlinkSync(excelFile.path)
-      if (pictureFile) {
-        fs.unlinkSync(pictureFile.path)
-      }
-    } catch (cleanupError) {
-      console.warn('Error cleaning up uploaded files:', cleanupError)
-    }
 
     res.json(formatSpinFile(spinFile))
   } catch (error) {
