@@ -616,7 +616,40 @@ const AdminPanel = ({ onClose, onFileUploaded, onGoToWheel }) => {
           file.json_content.forEach((item, idx) => {
             const firstName = item['First Name'] || item['first name'] || item['firstName'] || ''
             const lastName = item['Last Name'] || item['last name'] || item['lastName'] || ''
-            const ticketNumber = item['Ticket Number'] || item['ticket number'] || item['ticketNumber'] || ''
+            
+            // Extract ticket number - try multiple field names and variations
+            let ticketNumber = item['Ticket Number'] || 
+                             item['ticket number'] || 
+                             item['ticketNumber'] || 
+                             item['Ticket'] || 
+                             item['ticket'] ||
+                             item['Ticket No'] ||
+                             item['ticket no'] ||
+                             item['TicketNo'] ||
+                             item['Ticket #'] ||
+                             item['ticket #'] ||
+                             item['Ticket#'] ||
+                             item['Ticket ID'] ||
+                             item['ticket id'] ||
+                             item['TicketId'] ||
+                             ''
+            
+            // If not found, search through all keys for ticket-related fields (case-insensitive)
+            if (!ticketNumber || String(ticketNumber).trim() === '') {
+              const allKeys = Object.keys(item)
+              for (const key of allKeys) {
+                const keyLower = key.toLowerCase().trim()
+                // Check if key contains "ticket"
+                if (keyLower.includes('ticket')) {
+                  const value = item[key]
+                  if (value && String(value).trim() !== '') {
+                    ticketNumber = value
+                    break
+                  }
+                }
+              }
+            }
+            
             const email = item['Email'] || item['email'] || ''
             
             let name = ''
@@ -655,10 +688,24 @@ const AdminPanel = ({ onClose, onFileUploaded, onGoToWheel }) => {
             
             // Only add if not removed
             if (!isRemoved) {
+              // Ensure ticketNumber is properly formatted
+              const finalTicketNumber = ticketNumber ? String(ticketNumber).trim() : ''
+              
+              // Debug: Log first few entries to verify ticket extraction
+              if (idx < 5) {
+                console.log('🎫 AdminPanel Entry:', {
+                  index: idx,
+                  name,
+                  ticketNumber: finalTicketNumber,
+                  extracted: ticketNumber,
+                  itemKeys: Object.keys(item).slice(0, 5)
+                })
+              }
+              
               allEntries.push({
                 id: `${file.id}-${idx}`,
                 name: name || `Entry ${idx + 1}`,
-                ticketNumber: ticketNumber || '',
+                ticketNumber: finalTicketNumber,
                 email: email || '',
                 fileId: file.id,
                 originalData: item
