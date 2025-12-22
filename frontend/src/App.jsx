@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti'
-import { FiSettings, FiFile, FiFolder, FiSave, FiShare2, FiSearch, FiMaximize, FiChevronDown, FiGlobe, FiShuffle, FiArrowUp, FiArrowDown, FiPlay, FiSquare, FiHelpCircle, FiImage, FiDroplet, FiUpload, FiAward, FiX } from 'react-icons/fi'
+import { FiSettings, FiFile, FiFolder, FiSave, FiShare2, FiSearch, FiMaximize, FiChevronDown, FiGlobe, FiShuffle, FiArrowUp, FiArrowDown, FiPlay, FiSquare, FiHelpCircle, FiImage, FiDroplet, FiUpload, FiAward, FiX, FiMoon, FiSun } from 'react-icons/fi'
 import './App.css'
 import CanvasWheel from './components/CanvasWheel'
 import AdminPanel from './components/AdminPanel'
@@ -74,6 +74,12 @@ function App() {
     return saved || 'M'
   })
   const centerImageInputRef = useRef(null)
+  const [theme, setTheme] = useState(() => {
+    // Load theme from localStorage, default to 'normal'
+    const saved = localStorage.getItem('theme')
+    return saved || 'normal'
+  }) // Theme: 'night', 'normal', 'light'
+
   const [settings, setSettings] = useState({
     sound: 'Ticking sound',
     volume: 50,
@@ -1425,20 +1431,20 @@ function App() {
       if (removedCount === 0) {
         // Find the FIRST index that matches the ticket
         const matchingIndex = names.findIndex((name, index) => {
-          // First try to get ticket from mapping
-          let nameTicket = nameToTicketMap[name]
-          
-          // If no mapping, try to extract ticket from "Name (Ticket)" format
-          if (!nameTicket || nameTicket === name) {
-            const ticketMatch = name.match(/^(.+?)\s*\((\d+)\)$/)
-            if (ticketMatch) {
-              nameTicket = ticketMatch[2]
-            }
+        // First try to get ticket from mapping
+        let nameTicket = nameToTicketMap[name]
+        
+        // If no mapping, try to extract ticket from "Name (Ticket)" format
+        if (!nameTicket || nameTicket === name) {
+          const ticketMatch = name.match(/^(.+?)\s*\((\d+)\)$/)
+          if (ticketMatch) {
+            nameTicket = ticketMatch[2]
           }
-          
+        }
+        
           // Only match if ticket number exists and matches exactly
-          if (nameTicket && nameTicket !== name && String(nameTicket).trim() !== String(name).trim()) {
-            const normalizedNameTicket = String(nameTicket).trim()
+        if (nameTicket && nameTicket !== name && String(nameTicket).trim() !== String(name).trim()) {
+          const normalizedNameTicket = String(nameTicket).trim()
             return normalizedNameTicket === normalizedWinnerTicket
           }
           
@@ -1454,8 +1460,8 @@ function App() {
       
       // If we still haven't found a match, try exact name match as last resort (only if name is unique)
       if (removedCount === 0) {
-        const exactNameMatch = names.findIndex(name => name === winner.name)
-        if (exactNameMatch !== -1) {
+          const exactNameMatch = names.findIndex(name => name === winner.name)
+          if (exactNameMatch !== -1) {
           // Check if name is unique before removing
           const nameOccurrences = names.filter(name => name === winner.name).length
           if (nameOccurrences === 1) {
@@ -1466,15 +1472,15 @@ function App() {
             alert(`Cannot remove winner: Ticket number "${normalizedWinnerTicket}" not found, and name "${winner.name}" appears ${nameOccurrences} times.`)
             return
           }
-        } else {
-          alert(`Cannot remove winner: Ticket number "${normalizedWinnerTicket}" not found in entries.`)
-          return
+          } else {
+            alert(`Cannot remove winner: Ticket number "${normalizedWinnerTicket}" not found in entries.`)
+            return
         }
       }
       
       // Only set names once with the final filtered array
       if (finalNames !== null) {
-        console.log(`Successfully removed ${removedCount} entry/entries with ticket "${normalizedWinnerTicket}"`)
+      console.log(`Successfully removed ${removedCount} entry/entries with ticket "${normalizedWinnerTicket}"`)
         setNames(finalNames)
       }
       
@@ -2724,8 +2730,8 @@ function App() {
               localStorage.setItem('centerImage', String(uploadedFile.picture).trim())
             }
           }
-        }
-      } else {
+      }
+    } else {
         setSpinFiles([])
       }
     } catch (error) {
@@ -2745,6 +2751,19 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [spinWheel])
+
+  // Theme switching handler
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme)
+    localStorage.setItem('theme', newTheme)
+    // Apply theme class to document
+    document.documentElement.setAttribute('data-theme', newTheme)
+  }
+
+  // Apply theme on mount and when theme changes
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   // Effect to randomly select 100 entries from names array and update every few milliseconds
   // BUT ONLY when wheel is NOT spinning and NO winner is displayed
@@ -3044,8 +3063,8 @@ function App() {
                   {/* Golden 3D arrow - polished metallic style */}
                   <g filter="url(#arrowShadowFS)">
                     {/* Main arrow body with golden gradient */}
-                    <path
-                      d="M 10 50 L 90 20 L 90 80 Z"
+                  <path
+                    d="M 10 50 L 90 20 L 90 80 Z"
                       fill="url(#goldenGradientFS)"
                       stroke="#CD853F"
                       strokeWidth="1"
@@ -3071,12 +3090,12 @@ function App() {
                       strokeWidth="1.5"
                     />
                     {/* Subtle inner shadow line */}
-                    <path
-                      d="M 15 50 L 85 24 L 85 76 Z"
-                      fill="none"
+                  <path
+                    d="M 15 50 L 85 24 L 85 76 Z"
+                    fill="none"
                       stroke="rgba(0,0,0,0.2)"
                       strokeWidth="1"
-                    />
+                  />
                   </g>
                 </svg>
               </div>
@@ -3143,7 +3162,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app theme-${theme}`}>
       {/* Hidden file input for center image - always available */}
       <input
         ref={centerImageInputRef}
@@ -3184,6 +3203,23 @@ function App() {
           <button className="header-btn admin-btn desktop-admin-btn" title="Admin Panel" onClick={() => setShowAdminPanel(true)}>
             <FiUpload className="icon" />
             <span>Admin</span>
+          </button>
+          {/* Theme Switcher */}
+          <button 
+            className="header-btn" 
+            title={`Theme: ${theme === 'night' ? 'Night' : theme === 'normal' ? 'Normal' : 'Light'} (Click to change)`}
+            onClick={() => {
+              const themes = ['night', 'normal', 'light']
+              const currentIndex = themes.indexOf(theme)
+              const nextTheme = themes[(currentIndex + 1) % 3]
+              handleThemeChange(nextTheme)
+            }}
+          >
+            {theme === 'night' && <FiMoon className="icon" />}
+            {(theme === 'normal' || theme === 'light') && <FiSun className="icon" />}
+            <span className="hide-on-mobile">
+              {theme === 'night' ? 'Night' : theme === 'normal' ? 'Normal' : 'Light'}
+            </span>
           </button>
           <button 
             className="header-btn" 
@@ -3444,8 +3480,8 @@ function App() {
               {/* Golden 3D arrow - polished metallic style */}
               <g filter="url(#arrowShadow)">
                 {/* Main arrow body with golden gradient */}
-                <path
-                  d="M 10 50 L 90 20 L 90 80 Z"
+              <path
+                d="M 10 50 L 90 20 L 90 80 Z"
                   fill="url(#goldenGradient)"
                   stroke="#CD853F"
                   strokeWidth="1"
@@ -3471,12 +3507,12 @@ function App() {
                   strokeWidth="1.5"
                 />
                 {/* Subtle inner shadow line */}
-                <path
-                  d="M 15 50 L 85 24 L 85 76 Z"
-                  fill="none"
+              <path
+                d="M 15 50 L 85 24 L 85 76 Z"
+                fill="none"
                   stroke="rgba(0,0,0,0.2)"
                   strokeWidth="1"
-                />
+              />
               </g>
             </svg>
           </div>

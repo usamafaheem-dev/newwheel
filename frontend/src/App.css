@@ -15,25 +15,93 @@ body {
   overflow: hidden;
 }
 
+/* Theme Variables */
+:root {
+  /* Normal Theme (Default) */
+  --bg-gradient-start: #2b0505;
+  --bg-gradient-mid: #233159;
+  --bg-gradient-end: #05051a;
+  --header-bg: #2a2a2a;
+  --header-border: #3a3a3a;
+  --text-color: white;
+  --sidebar-bg: rgba(26, 26, 26, 0.95);
+  --sidebar-border: #3a3a3a;
+}
+
+[data-theme="night"] {
+  /* Night Theme (Darker) */
+  --bg-gradient-start: #000000;
+  --bg-gradient-mid: #0a0a0a;
+  --bg-gradient-end: #000000;
+  --header-bg: #1a1a1a;
+  --header-border: #2a2a2a;
+  --text-color: #e0e0e0;
+  --sidebar-bg: rgba(10, 10, 10, 0.98);
+  --sidebar-border: #2a2a2a;
+}
+
+[data-theme="light"] {
+  /* Light Theme (White) */
+  --bg-gradient-start: #f5f5f5;
+  --bg-gradient-mid: #e8e8e8;
+  --bg-gradient-end: #ffffff;
+  --header-bg: #ffffff;
+  --header-border: #e0e0e0;
+  --text-color: #1a1a1a;
+  --sidebar-bg: rgba(255, 255, 255, 0.98);
+  --sidebar-border: #e0e0e0;
+  --entries-bg: #f9f9f9;
+  --entries-item-bg: #ffffff;
+  --entries-item-hover: #f0f0f0;
+  --tab-color: #666;
+  --tab-active-color: #1a1a1a;
+  --winner-popup-bg: #ffffff;
+  --winner-popup-text: #1a1a1a;
+}
+
+[data-theme="night"] {
+  /* Night Theme - Additional variables */
+  --entries-bg: #0a0a0a;
+  --entries-item-bg: #1a1a1a;
+  --entries-item-hover: #2a2a2a;
+  --tab-color: #aaa;
+  --tab-active-color: #e0e0e0;
+  --winner-popup-bg: #1a1a1a;
+  --winner-popup-text: #e0e0e0;
+}
+
+[data-theme="normal"] {
+  /* Normal Theme - Additional variables */
+  --entries-bg: #2a2a2a;
+  --entries-item-bg: #1a1a1a;
+  --entries-item-hover: #2a2a2a;
+  --tab-color: #aaa;
+  --tab-active-color: white;
+  --winner-popup-bg: #1a1a1a;
+  --winner-popup-text: white;
+}
+
 .app {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #2b0505 0%, #233159 60%, #05051a 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 60%, var(--bg-gradient-end) 100%);
   display: flex;
   flex-direction: column;
-  color: white;
+  color: var(--text-color);
   overflow: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Header */
 .header {
-  background-color: #2a2a2a;
+  background-color: var(--header-bg);
   padding: 10px 20px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  border-bottom: 1px solid #3a3a3a;
+  border-bottom: 1px solid var(--header-border);
   z-index: 10;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .header-left {
@@ -54,7 +122,7 @@ body {
 .header-btn {
   background-color: transparent;
   border: none;
-  color: white;
+  color: var(--text-color);
   padding: 8px 12px;
   cursor: pointer;
   display: flex;
@@ -62,11 +130,11 @@ body {
   gap: 6px;
   font-size: 14px;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.3s ease;
 }
 
 .header-btn:hover {
-  background-color: #3a3a3a;
+  background-color: var(--header-border);
 }
 
 .header-btn .icon {
@@ -257,14 +325,15 @@ body {
 .right-sidebar {
   width: 350px;
   min-width: 350px; /* Fixed width, always visible */
-  background-color: rgba(26, 26, 26, 0.95);
+  background-color: var(--sidebar-bg);
   backdrop-filter: blur(10px);
-  border-left: 1px solid #3a3a3a;
+  border-left: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   padding: 0;
   position: relative;
   flex-shrink: 0; /* Don't shrink, always visible */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .right-sidebar.sidebar-hidden {
@@ -298,22 +367,22 @@ body {
 .tab {
   background-color: transparent;
   border: none;
-  color: #aaa;
+  color: var(--tab-color);
   padding: 8px 16px;
   cursor: pointer;
   font-size: 14px;
   border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+  transition: all 0.2s, color 0.3s ease;
   font-weight: 500;
 }
 
 .tab.active {
-  color: white;
-  border-bottom-color: white;
+  color: var(--tab-active-color);
+  border-bottom-color: var(--tab-active-color);
 }
 
 .tab:hover {
-  color: white;
+  color: var(--tab-active-color);
 }
 
 .hide-checkbox {
@@ -372,12 +441,13 @@ body {
 
 .entries-list {
   flex: 1;
-  background-color: #2a2a2a;
+  background-color: var(--entries-bg);
   padding: 12px 0;
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
   width: 100%;
+  transition: background-color 0.3s ease;
 }
 
 .add-name-input {
@@ -393,12 +463,13 @@ body {
 
 .add-name-input input {
   flex: 1;
-  background-color: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  color: white;
+  background-color: var(--entries-item-bg);
+  border: 1px solid var(--sidebar-border);
+  color: var(--text-color);
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 14px;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .add-name-input input:focus {
@@ -409,9 +480,9 @@ body {
 .entries-textarea {
   width: 100%;
   height: 100%;
-  background-color: #1a1a1a;
-  border: 1px solid rgb(255, 255, 255);
-  color: white;
+  background-color: var(--entries-item-bg);
+  border: 1px solid var(--sidebar-border);
+  color: var(--text-color);
   padding: 12px 14px;
   border-radius: 6px;
   font-size: 20px;
@@ -420,27 +491,7 @@ body {
   resize: none;
   box-sizing: border-box;
   line-height: 1.5;
-}
-
-.entries-textarea:focus {
-  outline: none;
-  border-color: #3B82F6;
-}
-
-.entries-textarea {
-  width: 100%;
-  height: 100%;
-  background-color: #1a1a1a;
-  border: 1px solid rgb(255, 255, 255);
-  color: white;
-  padding: 12px 14px;
-  border-radius: 6px;
-  font-size: 20px;
-  /* Increased font size as requested */
-  font-family: inherit;
-  resize: none;
-  box-sizing: border-box;
-  line-height: 1.5;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .entries-textarea:focus {
@@ -474,7 +525,7 @@ body {
 }
 
 .name-item {
-  background-color: #1a1a1a;
+  background-color: var(--entries-item-bg);
   padding: 12px 16px;
   /* Larger padding for touch targets and readability */
   border-radius: 8px;
@@ -483,14 +534,14 @@ body {
   align-items: center;
   font-size: 20px;
   /* Increased to 20px as requested ("slighter more bigger") */
-  color: white;
-  transition: background-color 0.2s, transform 0.1s;
+  color: var(--text-color);
+  transition: background-color 0.2s, transform 0.1s, color 0.3s ease;
   letter-spacing: 0.5px;
   /* improved letter spacing */
 }
 
 .name-item:hover {
-  background-color: #2a2a2a;
+  background-color: var(--entries-item-hover);
   transform: translateX(2px);
   /* Subtle hover effect */
 }
@@ -558,7 +609,7 @@ body {
 }
 
 .winner-popup {
-  background-color: #1a1a1a;
+  background-color: var(--winner-popup-bg);
   border-radius: 12px;
   /* Match popup width to wheel size - approximately 95% of wheel size */
   /* Default wheel is min(850px, 90vw), so popup should be ~808px or 85.5vw */
@@ -566,6 +617,7 @@ body {
   max-width: 808px;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.3s ease;
 }
 
 /* Match winner popup width to wheel wrapper width - slightly smaller than wheel */
@@ -672,10 +724,11 @@ body {
 .winner-name {
   font-size: 36px;
   font-weight: 500;
-  color: white;
+  color: var(--winner-popup-text);
   margin-bottom: 12px;
   text-transform: capitalize;
   font-family: 'Quicksand', sans-serif;
+  transition: color 0.3s ease;
 }
 
 .winner-buttons {
