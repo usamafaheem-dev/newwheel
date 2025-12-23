@@ -3847,17 +3847,9 @@ function App() {
                   
                   return (
                     <>
-                      <div className="winner-name">{displayName}</div>
-                      {finalTicket && (
-                  <div className="winner-ticket" style={{ 
-                          marginTop: '6px', 
-                          fontSize: '16px', 
-                    color: '#666',
-                    fontWeight: '500'
-                  }}>
-                          Ticket: {finalTicket}
-                  </div>
-                )}
+                      <div className="winner-name">
+                        {displayName} {finalTicket}
+                      </div>
                     </>
                   )
                 })()}
